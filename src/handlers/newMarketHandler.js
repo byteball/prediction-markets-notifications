@@ -4,16 +4,25 @@ const generateTextEvent = require("../utils/generateTextEvent");
 const { sendNewMarketToAll } = require("../channels/sendAll");
 
 module.exports = async (triggerUnit, responseObj) => {
-    const payload = getDataByTriggerUnit(triggerUnit);
-    const textEvent = await generateTextEvent({ ...payload, isUTC: true });
-    const prediction_address = responseObj.response.responseVars.prediction_address;
+    try {
+        const payload = getDataByTriggerUnit(triggerUnit);
+        const textEvent = await generateTextEvent({ ...payload, isUTC: true });
+        const prediction_address = responseObj?.response?.responseVars?.prediction_address;
 
-    console.log('New market detected:', prediction_address, textEvent);
+        if (!prediction_address) {
+            console.error('newMarketHandler: prediction_address not found in response', JSON.stringify(responseObj?.response?.responseVars));
+            return;
+        }
 
-    await sendNewMarketToAll({
-        title: textEvent,
-        description: 'Sports betting, binary options, and other bets on future events',
-        link: `${conf.frontendUrl}/market/${prediction_address}`,
-        imageURL: conf.testnet ? null : `https://prophet.ooo/api/og_images/market/${prediction_address}`,
-    });
+        console.log('New market detected:', prediction_address, textEvent);
+
+        await sendNewMarketToAll({
+            title: textEvent,
+            description: 'Sports betting, binary options, and other bets on future events',
+            link: `${conf.frontendUrl}/market/${prediction_address}`,
+            imageURL: conf.testnet ? null : `https://prophet.ooo/api/og_images/market/${prediction_address}`,
+        });
+    } catch (e) {
+        console.error('newMarketHandler error:', e);
+    }
 };

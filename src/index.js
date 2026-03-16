@@ -12,7 +12,7 @@ const { startDailyJob } = require("./jobs/dailyPopularMarkets");
 initDiscord().then(() => {
     console.log("Discord connected");
 }).catch(e => {
-    console.error("Discord init failed:", e.message);
+    console.error("Discord init failed:", e);
 });
 
 // Start cron jobs only after ocore is connected to the hub
@@ -23,7 +23,7 @@ eventBus.once('connected', () => {
 
 // Register aa-hooks for new market detection
 const factoriesHook = new Hooks(conf.factory_aas, {
-    newEventsOnly: false,
+    newEventsOnly: true,
     parallelProcessing: false,
 });
 

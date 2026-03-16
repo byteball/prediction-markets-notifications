@@ -15,32 +15,39 @@ function getBot() {
     return bot;
 }
 
-const queue = [];
-let processing = false;
+function createQueue() {
+    const queue = [];
+    let processing = false;
 
-function enqueue(fn) {
-    return new Promise((resolve, reject) => {
-        queue.push({ fn, resolve, reject });
-        processQueue();
-    });
-}
-
-async function processQueue() {
-    if (processing) return;
-    processing = true;
-
-    while (queue.length > 0) {
-        const { fn, resolve, reject } = queue.shift();
-        try {
-            const result = await executeWithRetry(fn);
-            resolve(result);
-        } catch (e) {
-            reject(e);
-        }
+    function enqueue(fn) {
+        return new Promise((resolve, reject) => {
+            queue.push({ fn, resolve, reject });
+            processQueue();
+        });
     }
 
-    processing = false;
+    async function processQueue() {
+        if (processing) return;
+        processing = true;
+
+        while (queue.length > 0) {
+            const { fn, resolve, reject } = queue.shift();
+            try {
+                const result = await executeWithRetry(fn);
+                resolve(result);
+            } catch (e) {
+                reject(e);
+            }
+        }
+
+        processing = false;
+    }
+
+    return enqueue;
 }
+
+const enqueueNewMarket = createQueue();
+const enqueueDailyDigest = createQueue();
 
 async function executeWithRetry(fn, attempt = 0) {
     try {
@@ -48,8 +55,9 @@ async function executeWithRetry(fn, attempt = 0) {
     } catch (e) {
         const retryAfter = e?.response?.parameters?.retry_after;
         if (retryAfter && attempt < MAX_RETRIES) {
-            console.log(`Telegram rate limited, retrying after ${retryAfter}s (attempt ${attempt + 1}/${MAX_RETRIES})`);
-            await new Promise(r => setTimeout(r, retryAfter * 1000));
+            const delay = Math.min(retryAfter, 120);
+            console.log(`Telegram rate limited, retrying after ${delay}s (attempt ${attempt + 1}/${MAX_RETRIES})`);
+            await new Promise(r => setTimeout(r, delay * 1000));
             return executeWithRetry(fn, attempt + 1);
         }
         throw e;
@@ -58,15 +66,19 @@ async function executeWithRetry(fn, attempt = 0) {
 
 async function sendNewMarket({ title, description, link, imageURL }) {
     const bot = getBot();
-    if (!bot || !chatId) {
-        console.error("Telegram bot not initialized or TELEGRAM_CHAT_ID not set");
+    if (!bot) {
+        console.error("Telegram sendNewMarket skipped: bot not initialized");
+        return;
+    }
+    if (!chatId) {
+        console.error("Telegram sendNewMarket skipped: TELEGRAM_CHAT_ID not set");
         return;
     }
 
     try {
         const caption = `<b>New Market</b>\n\n${escapeHtml(title)}\n${escapeHtml(description)}`;
 
-        await enqueue(() => {
+        await enqueueNewMarket(() => {
             if (imageURL) {
                 return bot.telegram.sendPhoto(chatId, imageURL, {
                     caption,
@@ -89,14 +101,18 @@ async function sendNewMarket({ title, description, link, imageURL }) {
             }
         });
     } catch (e) {
-        console.error("Telegram sendNewMarket error:", e.message);
+        console.error("Telegram sendNewMarket error:", e);
     }
 }
 
 async function sendDailyDigest({ markets }) {
     const bot = getBot();
-    if (!bot || !chatId) {
-        console.error("Telegram bot not initialized or TELEGRAM_CHAT_ID not set");
+    if (!bot) {
+        console.error("Telegram sendDailyDigest skipped: bot not initialized");
+        return;
+    }
+    if (!chatId) {
+        console.error("Telegram sendDailyDigest skipped: TELEGRAM_CHAT_ID not set");
         return;
     }
 
@@ -108,12 +124,12 @@ async function sendDailyDigest({ markets }) {
             text += `    TVL: <b>${m.reserve} ${m.reserveSymbol}</b>  ·  Liquidity provider APY: <b>${m.apy}</b>\n\n`;
         });
 
-        await enqueue(() => bot.telegram.sendMessage(chatId, text, {
+        await enqueueDailyDigest(() => bot.telegram.sendMessage(chatId, text, {
             parse_mode: 'HTML',
             disable_web_page_preview: true
         }));
     } catch (e) {
-        console.error("Telegram sendDailyDigest error:", e.message);
+        console.error("Telegram sendDailyDigest error:", e);
     }
 }
 

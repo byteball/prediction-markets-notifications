@@ -2,6 +2,7 @@ const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 let isReady = false;
+let cachedChannel = null;
 
 async function initDiscord() {
     if (!process.env.DISCORD_BOT_TOKEN) {
@@ -25,18 +26,22 @@ async function initDiscord() {
 }
 
 async function sendDailyDigest({ markets }) {
-    if (!isReady || !process.env.DISCORD_CHANNEL_ID) {
-        console.error("Discord not ready or DISCORD_CHANNEL_ID not set");
+    if (!isReady) {
+        console.error("Discord sendDailyDigest skipped: bot not ready");
+        return;
+    }
+    if (!process.env.DISCORD_CHANNEL_ID) {
+        console.error("Discord sendDailyDigest skipped: DISCORD_CHANNEL_ID not set");
         return;
     }
 
     try {
-        const channel = await client.channels.fetch(process.env.DISCORD_CHANNEL_ID);
+        if (!cachedChannel) cachedChannel = await client.channels.fetch(process.env.DISCORD_CHANNEL_ID);
+        const channel = cachedChannel;
 
         const embed = new EmbedBuilder()
             .setTitle('Top active markets')
-            .setColor('#2D72F6')
-            .setTimestamp();
+            .setColor('#2D72F6');
 
         markets.forEach((m) => {
             embed.addFields(
@@ -48,18 +53,23 @@ async function sendDailyDigest({ markets }) {
 
         await channel.send({ embeds: [embed] });
     } catch (e) {
-        console.error("Discord sendDailyDigest error:", e.message);
+        console.error("Discord sendDailyDigest error:", e);
     }
 }
 
 async function sendNewMarket({ title, description, link, imageURL }) {
-    if (!isReady || !process.env.DISCORD_CHANNEL_ID) {
-        console.error("Discord not ready or DISCORD_CHANNEL_ID not set");
+    if (!isReady) {
+        console.error("Discord sendNewMarket skipped: bot not ready");
+        return;
+    }
+    if (!process.env.DISCORD_CHANNEL_ID) {
+        console.error("Discord sendNewMarket skipped: DISCORD_CHANNEL_ID not set");
         return;
     }
 
     try {
-        const channel = await client.channels.fetch(process.env.DISCORD_CHANNEL_ID);
+        if (!cachedChannel) cachedChannel = await client.channels.fetch(process.env.DISCORD_CHANNEL_ID);
+        const channel = cachedChannel;
 
         const embed = new EmbedBuilder()
             .setTitle('New Market')
@@ -73,7 +83,7 @@ async function sendNewMarket({ title, description, link, imageURL }) {
 
         await channel.send({ embeds: [embed] });
     } catch (e) {
-        console.error("Discord sendNewMarket error:", e.message);
+        console.error("Discord sendNewMarket error:", e);
     }
 }
 

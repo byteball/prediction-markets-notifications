@@ -1,28 +1,26 @@
 const discord = require('./discord');
 const telegram = require('./telegram');
 
+const channels = { discord, telegram };
+
 exports.sendNewMarketToAll = async (data) => {
-    const results = await Promise.allSettled([
-        discord.sendNewMarket(data),
-        telegram.sendNewMarket(data),
-    ]);
+    const entries = Object.entries(channels);
+    const results = await Promise.allSettled(entries.map(([, ch]) => ch.sendNewMarket(data)));
 
     results.forEach((r, i) => {
         if (r.status === 'rejected') {
-            console.error(`sendNewMarket channel ${i} failed:`, r.reason);
+            console.error(`sendNewMarket ${entries[i][0]} failed:`, r.reason);
         }
     });
 };
 
 exports.sendDailyDigestToAll = async (data) => {
-    const results = await Promise.allSettled([
-        discord.sendDailyDigest(data),
-        telegram.sendDailyDigest(data),
-    ]);
+    const entries = Object.entries(channels);
+    const results = await Promise.allSettled(entries.map(([, ch]) => ch.sendDailyDigest(data)));
 
     results.forEach((r, i) => {
         if (r.status === 'rejected') {
-            console.error(`sendDailyDigest channel ${i} failed:`, r.reason);
+            console.error(`sendDailyDigest ${entries[i][0]} failed:`, r.reason);
         }
     });
 };
