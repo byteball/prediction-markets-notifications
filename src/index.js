@@ -8,16 +8,22 @@ const eventBus = require("ocore/event_bus.js");
 const newMarketHandler = require("./handlers/newMarketHandler");
 const { startDailyJob } = require("./jobs/dailyPopularMarkets");
 
-// Initialize Discord (don't block on it)
-initDiscord().then(() => {
+// Wait for both Discord and ocore to be ready before starting daily job
+const discordReady = initDiscord().then(() => {
     console.log("Discord connected");
 }).catch(e => {
     console.error("Discord init failed:", e);
 });
 
-// Start cron jobs only after ocore is connected to the hub
-eventBus.once('connected', () => {
-    console.log("Connected to hub, starting daily job");
+const ocoreReady = new Promise(resolve => {
+    eventBus.once('connected', () => {
+        console.log("Connected to hub");
+        resolve();
+    });
+});
+
+Promise.all([discordReady, ocoreReady]).then(() => {
+    console.log("Both Discord and ocore ready, starting daily job");
     startDailyJob();
 });
 
