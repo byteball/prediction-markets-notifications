@@ -1,7 +1,7 @@
 const network = require('ocore/network.js');
 const conf = require('ocore/conf.js');
 
-exports.fetchTopMarkets = async (count = 5) => {
+exports.fetchTopMarkets = async () => {
     const allMarkets = [];
 
     for (const factoryAA of conf.factory_aas) {
@@ -38,6 +38,7 @@ exports.fetchTopMarkets = async (count = 5) => {
             market.supply_yes = vars.supply_yes || 0;
             market.supply_no = vars.supply_no || 0;
             market.supply_draw = vars.supply_draw || 0;
+            market.first_trade_ts = vars.first_trade_ts || null;
             market.base_aa = definition?.[1]?.base_aa || null;
         } catch (e) {
             console.error(`Failed to get data for ${market.aa_address}:`, e);
@@ -46,7 +47,5 @@ exports.fetchTopMarkets = async (count = 5) => {
         }
     }));
 
-    return activeMarkets
-        .sort((a, b) => b.reserve - a.reserve)
-        .slice(0, count);
+    return activeMarkets;
 };

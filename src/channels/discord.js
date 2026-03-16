@@ -34,7 +34,7 @@ async function sendDailyDigest({ markets }) {
         const channel = await client.channels.fetch(process.env.DISCORD_CHANNEL_ID);
 
         const embed = new EmbedBuilder()
-            .setTitle('Top Markets by Liquidity')
+            .setTitle('Top active markets')
             .setColor('#2D72F6')
             .setTimestamp();
 
@@ -42,7 +42,7 @@ async function sendDailyDigest({ markets }) {
             embed.addFields(
                 { name: '\u200b', value: `**${m.rank}. [${m.question}](${m.link})**` },
                 { name: 'TVL', value: `${m.reserve} ${m.reserveSymbol}`, inline: true },
-                { name: 'APY', value: `${m.apy}%`, inline: true },
+                { name: 'Liquidity provider APY', value: m.apy, inline: true },
             );
         });
 

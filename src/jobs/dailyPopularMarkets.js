@@ -9,8 +9,8 @@ const getAssetInfo = require('../utils/getAssetInfo');
 const SECONDS_IN_YEAR = 60 * 60 * 24 * 365;
 const BASE_AA_WITH_ISSUE_FEE_FOR_ADD_LIQUIDITY = "AXG7G57VBLAHF3WRN5WMQ53KQEQDRONC";
 
-function getEstimatedAPY({ base_aa, committed_at, created_at, coef, issue_fee }) {
-    const elapsed_seconds = (committed_at || moment.utc().unix()) - created_at;
+function getEstimatedAPY({ base_aa, committed_at, first_trade_ts, created_at, coef, issue_fee }) {
+    const elapsed_seconds = (committed_at || moment.utc().unix()) - (first_trade_ts || created_at);
     if (elapsed_seconds <= 0 || coef === 1) return 0;
     let apy;
     if (base_aa === BASE_AA_WITH_ISSUE_FEE_FOR_ADD_LIQUIDITY) {
@@ -30,14 +30,14 @@ exports.startDailyJob = () => {
         console.log('Running daily popular markets job...');
 
         try {
-            const markets = await fetchTopMarkets(count);
+            const markets = await fetchTopMarkets();
 
             if (!markets.length) {
                 console.log('No active markets found for daily digest');
                 return;
             }
 
-            const enriched = await Promise.all(markets.map(async (m, i) => {
+            const enriched = await Promise.all(markets.map(async (m) => {
                 const textEvent = await generateTextEvent({
                     oracle: m.oracle,
                     event_date: m.event_date * 1000,
@@ -52,22 +52,33 @@ exports.startDailyJob = () => {
                 const apy = getEstimatedAPY({
                     base_aa: m.base_aa,
                     committed_at: m.committed_at,
+                    first_trade_ts: m.first_trade_ts,
                     created_at: m.created_at,
                     coef: m.coef || 1,
                     issue_fee: m.issue_fee || 0,
                 });
 
                 return {
-                    rank: i + 1,
                     question: textEvent,
                     reserve: reserveInUnits.toFixed(assetInfo.decimals > 4 ? 4 : 2),
+                    reserveRaw: reserveInUnits,
                     reserveSymbol: assetInfo.symbol,
-                    apy: apy.toFixed(2),
+                    apyRaw: apy,
+                    apy: !apy ? 'n/a' : apy >= 1000 ? 'not shown' : apy.toFixed(2) + '%',
                     link: `${conf.frontendUrl}/market/${m.aa_address}`,
                 };
             }));
 
-            await sendDailyDigestToAll({ markets: enriched });
+            enriched.sort((a, b) => {
+                const apyA = Math.min(a.apyRaw, 100);
+                const apyB = Math.min(b.apyRaw, 100);
+                if (apyB !== apyA) return apyB - apyA;
+                return b.reserveRaw - a.reserveRaw;
+            });
+
+            const top = enriched.slice(0, count).map((m, i) => ({ ...m, rank: i + 1 }));
+
+            await sendDailyDigestToAll({ markets: top });
             console.log('Daily digest sent successfully');
         } catch (e) {
             console.error('Daily popular markets job failed:', e);
