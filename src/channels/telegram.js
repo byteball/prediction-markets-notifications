@@ -104,9 +104,8 @@ async function sendDailyDigest({ markets }) {
         let text = '<b>Top Markets by Liquidity</b>\n\n';
 
         markets.forEach((m) => {
-            text += `${m.rank}. ${escapeHtml(m.question)}\n`;
-            text += `   TVL: ${m.reserve} ${m.reserveSymbol} | APY: ${m.apy}%\n`;
-            text += `   <a href="${m.link}">View on Prophet</a>\n\n`;
+            text += `<b>${m.rank}.</b> <a href="${m.link}">${escapeHtml(m.question)}</a>\n`;
+            text += `    TVL: <b>${m.reserve} ${m.reserveSymbol}</b>  ·  APY: <b>${m.apy}%</b>\n\n`;
         });
 
         await enqueue(() => bot.telegram.sendMessage(chatId, text, {
