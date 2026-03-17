@@ -5,6 +5,8 @@ const { fetchTopMarkets } = require('../utils/fetchMarkets');
 const { sendDailyDigestToAll } = require('../channels/sendAll');
 const generateTextEvent = require('../utils/generateTextEvent');
 const getAssetInfo = require('../utils/getAssetInfo');
+const { getExchangeRates, getUsdRate } = require('../utils/getExchangeRates');
+const toLocalString = require('../utils/toLocalString');
 
 const SECONDS_IN_YEAR = 60 * 60 * 24 * 365;
 const BASE_AA_WITH_ISSUE_FEE_FOR_ADD_LIQUIDITY = "AXG7G57VBLAHF3WRN5WMQ53KQEQDRONC";
@@ -37,6 +39,8 @@ exports.startDailyJob = () => {
                 return;
             }
 
+            const rates = await getExchangeRates();
+
             const enriched = await Promise.all(markets.map(async (m) => {
                 const textEvent = await generateTextEvent({
                     oracle: m.oracle,
@@ -49,6 +53,8 @@ exports.startDailyJob = () => {
 
                 const assetInfo = await getAssetInfo(m.reserve_asset);
                 const reserveInUnits = (m.reserve || 0) / (10 ** assetInfo.decimals);
+                const usdRate = getUsdRate(rates, m.reserve_asset) || 1;
+                const reserveUsd = reserveInUnits * usdRate;
                 const apy = getEstimatedAPY({
                     base_aa: m.base_aa,
                     committed_at: m.committed_at,
@@ -60,8 +66,8 @@ exports.startDailyJob = () => {
 
                 return {
                     question: textEvent,
-                    reserve: reserveInUnits.toFixed(assetInfo.decimals > 4 ? 4 : 2),
-                    reserveRaw: reserveInUnits,
+                    reserve: toLocalString(reserveInUnits),
+                    reserveUsd,
                     reserveSymbol: assetInfo.symbol,
                     apyRaw: apy,
                     apy: !apy ? 'n/a' : apy >= 1000 ? 'not shown' : apy.toFixed(2) + '%',
@@ -73,7 +79,7 @@ exports.startDailyJob = () => {
                 const apyA = Math.min(a.apyRaw, 100);
                 const apyB = Math.min(b.apyRaw, 100);
                 if (apyB !== apyA) return apyB - apyA;
-                return b.reserveRaw - a.reserveRaw;
+                return b.reserveUsd - a.reserveUsd;
             });
 
             const top = enriched.slice(0, count).map((m, i) => ({ ...m, rank: i + 1 }));

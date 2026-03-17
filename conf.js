@@ -14,5 +14,6 @@ exports.frontendUrl = process.env.testnet == "1" ? 'https://testnet.prophet.ooo'
 exports.sport_oracle = "TKT4UESIKTTRALRRLWS4SENSTJX6ODCW";
 exports.currency_oracle = "JPQKPRI5FMTQRJF4ZZMYZYDQVRD55OTC";
 exports.precious_metal_oracle = "DXYWHSZ72ZDNDZ7WYZXKWBBH425C6WZN";
+exports.exchangeRatesUrl = "https://v2-data.oswap.io/api/v1/exchangeRates";
 
 console.log("finished notification service conf");
