@@ -1,7 +1,7 @@
 const cron = require('node-cron');
 const moment = require('moment');
 const conf = require('ocore/conf.js');
-const { fetchTopMarkets } = require('../utils/fetchMarkets');
+const { fetchActiveMarkets } = require('../utils/fetchActiveMarkets');
 const { sendDailyDigestToAll } = require('../channels/sendAll');
 const generateTextEvent = require('../utils/generateTextEvent');
 const getAssetInfo = require('../utils/getAssetInfo');
@@ -32,7 +32,7 @@ exports.startDailyJob = () => {
         console.log('Running daily popular markets job...');
 
         try {
-            const markets = await fetchTopMarkets();
+            const markets = await fetchActiveMarkets();
 
             if (!markets.length) {
                 console.log('No active markets found for daily digest');

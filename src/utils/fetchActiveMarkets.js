@@ -1,7 +1,7 @@
 const network = require('ocore/network.js');
 const conf = require('ocore/conf.js');
 
-exports.fetchTopMarkets = async () => {
+exports.fetchActiveMarkets = async () => {
     const results = await Promise.all(conf.factory_aas.map(async (factoryAA) => {
         try {
             const stateVars = await network.requestFromLightVendor('light/get_aa_state_vars', {
@@ -23,11 +23,11 @@ exports.fetchTopMarkets = async () => {
 
     const allMarkets = results.flat();
 
-    console.log(`fetchTopMarkets: found ${allMarkets.length} total markets from ${conf.factory_aas.length} factories`);
+    console.log(`fetchActiveMarkets: found ${allMarkets.length} total markets from ${conf.factory_aas.length} factories`);
 
     const now = Math.floor(Date.now() / 1000);
     const activeMarkets = allMarkets.filter(m => m.event_date > now);
-    console.log(`fetchTopMarkets: ${activeMarkets.length} active markets (event_date > ${now})`);
+    console.log(`fetchActiveMarkets: ${activeMarkets.length} active markets (event_date > ${now})`);
 
     // fetch state vars (reserve, coef, supplies) and definition (base_aa) from each prediction AA
     await Promise.all(activeMarkets.map(async (market) => {
