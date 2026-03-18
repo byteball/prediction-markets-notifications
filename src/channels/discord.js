@@ -44,10 +44,16 @@ async function sendDailyDigest({ markets }) {
             .setColor('#2D72F6');
 
         markets.forEach((m) => {
+            const probParts = [];
+            if (m.probabilities.yes !== undefined) probParts.push(`🟢 YES ${m.probabilities.yes.toFixed(1)}%`);
+            if (m.probabilities.draw !== undefined) probParts.push(`🟡 DRAW ${m.probabilities.draw.toFixed(1)}%`);
+            if (m.probabilities.no !== undefined) probParts.push(`🔴 NO ${m.probabilities.no.toFixed(1)}%`);
+
             embed.addFields(
                 { name: '\u200b', value: `**${m.rank}. [${m.question}](${m.link})**` },
                 { name: 'TVL', value: `${m.reserve} ${m.reserveSymbol}`, inline: true },
                 { name: 'Liquidity provider APY', value: m.apy, inline: true },
+                { name: 'Probabilities', value: probParts.join('  ·  ') || 'n/a', inline: false },
             );
         });
 

@@ -120,8 +120,15 @@ async function sendDailyDigest({ markets }) {
         let text = '<b>Top active markets</b>\n\n';
 
         markets.forEach((m) => {
+            const probParts = [];
+            if (m.probabilities.yes !== undefined) probParts.push(`🟢 YES ${m.probabilities.yes.toFixed(1)}%`);
+            if (m.probabilities.draw !== undefined) probParts.push(`🟡 DRAW ${m.probabilities.draw.toFixed(1)}%`);
+            if (m.probabilities.no !== undefined) probParts.push(`🔴 NO ${m.probabilities.no.toFixed(1)}%`);
+            const probStr = probParts.join(' · ') || 'n/a';
+
             text += `<b>${m.rank}.</b> <a href="${m.link}">${escapeHtml(m.question)}</a>\n`;
-            text += `    TVL: <b>${m.reserve} ${m.reserveSymbol}</b>  ·  Liquidity provider APY: <b>${m.apy}</b>\n\n`;
+            text += `    TVL: <b>${m.reserve} ${m.reserveSymbol}</b>  ·  Liquidity provider APY: <b>${m.apy}</b>\n`;
+            text += `    Probabilities: ${probStr}\n\n`;
         });
 
         await enqueueDailyDigest(() => bot.telegram.sendMessage(chatId, text, {

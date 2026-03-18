@@ -64,6 +64,15 @@ exports.startDailyJob = () => {
                     issue_fee: m.issue_fee || 0,
                 });
 
+                const hasDraw = m.supply_draw > 0;
+                const probabilities = {};
+                const sumSquares = m.supply_yes ** 2 + m.supply_no ** 2 + (m.supply_draw || 0) ** 2;
+                if (sumSquares > 0) {
+                    probabilities.yes = (m.supply_yes ** 2 / sumSquares) * 100;
+                    probabilities.no = (m.supply_no ** 2 / sumSquares) * 100;
+                    if (hasDraw) probabilities.draw = (m.supply_draw ** 2 / sumSquares) * 100;
+                }
+
                 return {
                     question: textEvent,
                     reserve: toLocalString(reserveInUnits),
@@ -71,6 +80,7 @@ exports.startDailyJob = () => {
                     reserveSymbol: assetInfo.symbol,
                     apyRaw: apy,
                     apy: !apy ? 'n/a' : apy >= 1000 ? 'not shown' : apy.toFixed(2) + '%',
+                    probabilities,
                     link: `${conf.frontendUrl}/market/${m.aa_address}`,
                 };
             }));
