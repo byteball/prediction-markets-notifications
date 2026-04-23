@@ -1,5 +1,9 @@
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 
+function escapeMarkdown(str) {
+    return String(str).replace(/([\\`*_~|>\[\]()#])/g, '\\$1');
+}
+
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 let isReady = false;
 let cachedChannel = null;
@@ -80,7 +84,7 @@ async function sendNewMarket({ title, description, link, imageURL }) {
         const embed = new EmbedBuilder()
             .setTitle('New Market')
             .setColor('#2D72F6')
-            .setDescription(`**${title}**\n${description}\n[Open on Prophet](${link})`)
+            .setDescription(`**${escapeMarkdown(title)}**\n${escapeMarkdown(description)}\n[Open on Prophet](${link})`)
             .setTimestamp();
 
         if (imageURL) {
