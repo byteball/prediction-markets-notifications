@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import newMarketHandler from './newMarketHandler.js';
+import newMarketHandler from '../src/handlers/newMarketHandler.js';
 
 const { pendingMarkets, generateTextEvent, marketsHook, conf } = globalThis.__fakes;
 

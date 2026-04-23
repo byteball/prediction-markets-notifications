@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as initDB from './initDB.js';
+import * as initDB from '../src/db/initDB.js';
 
 const { db, fs, desktopApp } = globalThis.__fakes;
 

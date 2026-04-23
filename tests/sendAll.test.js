@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { sendNewMarketToAll, sendDailyDigestToAll } from './sendAll.js';
+import { sendNewMarketToAll, sendDailyDigestToAll } from '../src/channels/sendAll.js';
 
 const { discord, telegram } = globalThis.__fakes;
 

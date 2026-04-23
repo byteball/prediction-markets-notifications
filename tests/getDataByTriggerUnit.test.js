@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import getDataByTriggerUnit from './getDataByTriggerUnit.js';
+import getDataByTriggerUnit from '../src/utils/getDataByTriggerUnit.js';
 
 describe('getDataByTriggerUnit', () => {
     beforeEach(() => {

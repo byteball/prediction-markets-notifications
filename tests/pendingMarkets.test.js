@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import * as pendingMarkets from './pendingMarkets.js';
+import * as pendingMarkets from '../src/db/pendingMarkets.js';
 
 const db = globalThis.__fakes.db;
 

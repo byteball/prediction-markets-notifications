@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import liquidityHandler from './liquidityHandler.js';
+import liquidityHandler from '../src/handlers/liquidityHandler.js';
 
 const { pendingMarkets, sendAll } = globalThis.__fakes;
 
