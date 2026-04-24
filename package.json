@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "aa-hooks": "^0.1.2",
+    "aabot": "^0.1.5",
     "discord.js": "^14.15.2",
     "moment": "^2.30.1",
     "node-cron": "^3.0.3",
