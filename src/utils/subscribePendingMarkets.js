@@ -19,13 +19,21 @@ module.exports = async () => {
     console.error(`[pending-markets] subscribePendingMarkets: found ${addresses.length} total markets`);
 
     const pending = [];
-    const active = new Set();
+    const skip = new Set();
+    let resolvedCount = 0;
+    let activeCount = 0;
     await Promise.all(addresses.map(async (aa_address) => {
         try {
             const vars = await dag.readAAStateVars(aa_address);
-            const supplyTotal = (vars?.supply_yes || 0) + (vars?.supply_no || 0) + (vars?.supply_draw || 0);
-            if (supplyTotal === 0) pending.push(aa_address);
-            else active.add(aa_address);
+            if (vars?.result) {
+                skip.add(aa_address);
+                resolvedCount += 1;
+            } else if (!vars?.reserve) {
+                pending.push(aa_address);
+            } else {
+                skip.add(aa_address);
+                activeCount += 1;
+            }
         } catch (e) {
             console.error(`[pending-markets] subscribePendingMarkets: readAAStateVars failed for ${aa_address}:`, e);
         }
@@ -34,13 +42,13 @@ module.exports = async () => {
     const watched = await new Promise((resolve) => {
         db.query('SELECT address FROM my_watched_addresses', (r) => resolve(r.map((row) => row.address)));
     });
-    const staleWatched = watched.filter((addr) => active.has(addr));
+    const staleWatched = watched.filter((addr) => skip.has(addr));
     for (const addr of staleWatched) unwatchMarket(addr);
     if (staleWatched.length > 0) {
         console.error(`[pending-markets] subscribePendingMarkets: removed ${staleWatched.length} stale market(s) from my_watched_addresses`);
     }
 
-    console.error(`[pending-markets] subscribePendingMarkets: ${pending.length} markets with zero supply, subscribing...`);
+    console.error(`[pending-markets] subscribePendingMarkets: ${pending.length} markets with zero reserve, subscribing...`);
     let subscribed = 0;
     await Promise.all(pending.map(async (aa_address) => {
         try {
@@ -51,5 +59,5 @@ module.exports = async () => {
         }
     }));
 
-    console.error(`[pending-markets] subscribePendingMarkets: done. pending=${pending.length} subscribed=${subscribed} stale_removed=${staleWatched.length}`);
+    console.error(`[pending-markets] subscribePendingMarkets: done. pending=${pending.length} subscribed=${subscribed} active=${activeCount} resolved=${resolvedCount} stale_removed=${staleWatched.length}`);
 };

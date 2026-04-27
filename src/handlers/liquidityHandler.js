@@ -20,6 +20,20 @@ module.exports = async (triggerUnit, responseObj) => {
         return;
     }
 
+    let vars;
+    try {
+        vars = await dag.readAAStateVars(aa_address);
+    } catch (e) {
+        console.error(`[pending-markets] liquidityHandler: readAAStateVars failed for ${aa_address}:`, e);
+        return;
+    }
+
+    if (vars?.result) {
+        console.error(`[pending-markets] liquidityHandler: ${aa_address} already resolved (${vars.result}), skipping notification and unsubscribing`);
+        unwatchMarket(aa_address);
+        return;
+    }
+
     let params;
     try {
         params = await dag.readAAParams(aa_address);
