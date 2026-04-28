@@ -29,7 +29,6 @@ exports.fetchActiveMarkets = async () => {
     const activeMarkets = allMarkets.filter(m => m.event_date > now);
     console.log(`fetchActiveMarkets: ${activeMarkets.length} active markets (event_date > ${now})`);
 
-    // fetch state vars (reserve, coef, supplies) and definition (base_aa) from each prediction AA
     await Promise.all(activeMarkets.map(async (market) => {
         try {
             const [vars, definition] = await Promise.all([

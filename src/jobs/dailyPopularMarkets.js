@@ -107,6 +107,5 @@ exports.startDailyJob = () => {
 
     console.log(`Daily popular markets cron scheduled: ${schedule} UTC`);
 
-    // run immediately on start
     runJob().catch(e => console.error('Initial daily job error:', e));
 };

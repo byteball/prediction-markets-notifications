@@ -1,28 +1,24 @@
-const conf = require("ocore/conf.js");
-const getDataByTriggerUnit = require("../utils/getDataByTriggerUnit");
-const generateTextEvent = require("../utils/generateTextEvent");
-const { sendNewMarketToAll } = require("../channels/sendAll");
+const watchMarket = require("../utils/watchMarket");
+
+const OBYTE_ADDRESS_RE = /^[A-Z2-7]{32}$/;
 
 module.exports = async (triggerUnit, responseObj) => {
+    const prediction_address = responseObj?.response?.responseVars?.prediction_address;
+
+    if (!prediction_address) {
+        console.error('[pending-markets] newMarketHandler: prediction_address not found in response');
+        return;
+    }
+
+    if (typeof prediction_address !== 'string' || !OBYTE_ADDRESS_RE.test(prediction_address)) {
+        console.error(`[pending-markets] newMarketHandler: prediction_address has unexpected format, rejecting: ${JSON.stringify(prediction_address)}`);
+        return;
+    }
+
     try {
-        const payload = getDataByTriggerUnit(triggerUnit);
-        const textEvent = await generateTextEvent({ ...payload, isUTC: true });
-        const prediction_address = responseObj?.response?.responseVars?.prediction_address;
-
-        if (!prediction_address) {
-            console.error('newMarketHandler: prediction_address not found in response', JSON.stringify(responseObj?.response?.responseVars));
-            return;
-        }
-
-        console.log('New market detected:', prediction_address, textEvent);
-
-        await sendNewMarketToAll({
-            title: textEvent,
-            description: 'Sports betting, binary options, and other bets on future events',
-            link: `${conf.frontendUrl}/market/${prediction_address}`,
-            imageURL: conf.testnet ? null : `https://prophet.ooo/api/og_images/market/${prediction_address}`,
-        });
+        await watchMarket(prediction_address);
+        console.error(`[pending-markets] newMarketHandler: SUBSCRIBED ${prediction_address}`);
     } catch (e) {
-        console.error('newMarketHandler error:', e);
+        console.error(`[pending-markets] newMarketHandler: watchMarket failed for ${prediction_address}:`, e);
     }
 };
