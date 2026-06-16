@@ -33,15 +33,16 @@ exports.startDailyJob = () => {
 
         try {
             const markets = await fetchActiveMarkets();
+            const marketsWithReserve = markets.filter((m) => m.reserve > 0);
 
-            if (!markets.length) {
+            if (!marketsWithReserve.length) {
                 console.log('No active markets found for daily digest');
                 return;
             }
 
             const rates = await getExchangeRates();
 
-            const enriched = await Promise.all(markets.map(async (m) => {
+            const enriched = await Promise.all(marketsWithReserve.map(async (m) => {
                 const textEvent = await generateTextEvent({
                     oracle: m.oracle,
                     event_date: m.event_date * 1000,
