@@ -1,5 +1,6 @@
 const network = require('ocore/network.js');
 const conf = require('ocore/conf.js');
+const getSupplies = require('./getSupplies');
 
 exports.fetchActiveMarkets = async () => {
     const results = await Promise.all(conf.factory_aas.map(async (factoryAA) => {
@@ -37,9 +38,10 @@ exports.fetchActiveMarkets = async () => {
             ]);
             market.reserve = vars.reserve || 0;
             market.coef = vars.coef || 1;
-            market.supply_yes = vars.supply_yes || 0;
-            market.supply_no = vars.supply_no || 0;
-            market.supply_draw = vars.supply_draw || 0;
+            const supplies = getSupplies(vars);
+            market.supply_yes = supplies.yes;
+            market.supply_no = supplies.no;
+            market.supply_draw = supplies.draw;
             market.first_trade_ts = vars.first_trade_ts || null;
             market.base_aa = definition?.[1]?.base_aa || null;
         } catch (e) {
