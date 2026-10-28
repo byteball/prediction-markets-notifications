@@ -1,0 +1,1 @@
+*/20 * * * * cd prediction-markets-notifications; node check_daemon.js 1>>~/.config/prediction-markets-notifications/check_daemon.log 2>>~/.config/prediction-markets-notifications/check_daemon.err
